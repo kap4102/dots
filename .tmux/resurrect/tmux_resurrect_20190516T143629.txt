@@ -1,0 +1,14 @@
+pane	0	1	:zsh	1	:*	1	:/home/k41	0	sh	:/bin/sh /home/k41/.antigen/bundles/robbyrussell/oh-my-zsh/plugins/emacs/emacsclient.sh -nw
+pane	0	1	:zsh	1	:*	2	:/home/k41	1	sudo	:sudo zypper dup
+pane	0	1	:zsh	1	:*	3	:/home/k41	0	sudo	:sudo atop
+pane	0	1	:zsh	1	:*	4	:/home/k41	0	sudo	:sudo powertop
+pane	0	2	:zsh	0	:-	1	:/home/k41	0	zsh	:
+pane	0	2	:zsh	0	:-	2	:/home/k41	1	zsh	:
+pane	0	2	:zsh	0	:-	3	:/home/k41	0	htop	:htop
+pane	0	2	:zsh	0	:-	4	:/home/k41	0	sudo	:sudo iftop
+pane	0	2	:zsh	0	:-	5	:/home/k41	0	mc	:mc
+pane	1	1	:zsh	1	:*	1	:/home/k41	1	zsh	:
+window	0	1	1	:*	7ad1,479x132,0,0{239x132,0,0,0,239x132,240,0[239x107,240,0,2,239x24,240,108{119x24,240,108,5,119x24,360,108,7}]}
+window	0	2	0	:-	0ab2,479x132,0,0{159x132,0,0,8,159x132,160,0,9,159x132,320,0[159x66,320,0,10,159x32,320,67,11,159x32,320,100,12]}
+window	1	1	1	:*	92f0,547x151,0,0,3
+state	0	
