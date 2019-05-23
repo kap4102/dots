@@ -1,3 +1,4 @@
+-- imports
 import XMonad
 import XMonad.Util.EZConfig
 import XMonad.Config.Kde
@@ -56,29 +57,38 @@ import XMonad.Actions.CycleWS
 -- subLayout [0,1] (windowNavigation $ emptyBSP ||| Tall 5 (3/100) (1/2)) $ Mirror rowOfColumns
 -- subLayout [] (windowNavigation $ emptyBSP) $ windowNavigation $ rowOfColumns
 myLayouts = -- subLayout [] emptyBSP $ (Mirror (BinaryColumn 0.7 16)) |||
+  -- sublayout combining resizabletall with an mirrored version of it self both with (initaly) zero slave windows.
+  -- this allows multiply resziable columns with multiply rows in each. by incrementing the master window count this can be cahnged to multiply columns
   subLayout [] (ResizableTall 0 (3/100) (1/2) []) $ (Mirror $ ResizableTall 0 (3/100) (1/2) []) |||
   -- subLayout [] (ResizableTall 0 (3/100) (1/2) []) $ emptyBSP |||
   -- subLayout [] emptyBSP $ (Mirror (BinaryColumn 0.7 16)) |||
   -- ResizableTall 1 (3/100) (1/2) [] |||
+  -- at start one Column with multiply rows, than more columns kann by created, by moving windows to new groups. winodws and rows can be maximized, taking either the current row(window) or the screen(group)
   rowOfColumns |||
+  -- masterd adds an master window to an layout, it can be manipulated with all normal tall layout functions(Inreass/Decreass Master count/size.)
   mastered (1/100) (1/2) rowOfColumns |||
+  -- binarytree based layout splittiing windows with an fibronacci algortithem, expically usefull with hiddWindows enabling one to move windows to different locations in the tree
   emptyBSP |||
+  -- masterd Version
   mastered (1/100) (1/2) emptyBSP
   -- (stoppable rowOfColumns)
   -- |||  Tall 1 (3/100) (1/2) ||| mosaic 2 [3,2]
 
 myWorkspaces = ["1","2","3","4","5","6","7","8","9"]
 
+-- float krunner and plasmashell
 myManageHook = composeAll . concat $
   [ [ className   =? c --> doFloat   | c <- myFloats] ]
 
     where myFloats = ["plasmashell","krunner"]
 
+-- main config with ewmh and kde compitabillity
 main =  xmonad $ ewmh $ kdeConfig
   { manageHook  = manageHook kdeConfig <+> myManageHook
   , borderWidth = 2
   , workspaces  = myWorkspaces
   , modMask     = mod4Mask
+  -- modifiers for all layouts, avoiding docks, hidding(minimizing) Windows, maximizing windows, window gaps
   , layoutHook  = avoidStruts $ (windowNavigation $ (hiddenWindows $ (maximize $ (spacing 6 $ myLayouts))))
   , logHook     = dynamicLog
   , keys        = myKeys
@@ -87,6 +97,7 @@ main =  xmonad $ ewmh $ kdeConfig
   , focusedBorderColor = "#cd8b00"
   }
 
+-- overwrite all keys
 myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     [
       -- launch a terminal
