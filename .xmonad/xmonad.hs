@@ -42,22 +42,29 @@ import XMonad.Layout.Master
 import qualified XMonad.Layout.MultiToggle as MT
 import XMonad.Prompt
 import XMonad.Prompt.RunOrRaise
+import XMonad.Prompt.Shell
 import XMonad.Layout.Groups.Helpers
 import XMonad.Actions.FocusNth
 import XMonad.Layout.ResizableTile
 import XMonad.Layout.DwmStyle
 import XMonad.Layout.Spacing
-
+import XMonad.Layout.Maximize
+import XMonad.Actions.DynamicWorkspaces
+import XMonad.Actions.Navigation2D
+import XMonad.Actions.CycleWS
 
 -- subLayout [0,1] (windowNavigation $ emptyBSP ||| Tall 5 (3/100) (1/2)) $ Mirror rowOfColumns
 -- subLayout [] (windowNavigation $ emptyBSP) $ windowNavigation $ rowOfColumns
 myLayouts = -- subLayout [] emptyBSP $ (Mirror (BinaryColumn 0.7 16)) |||
-  (subLayout [] (ResizableTall 0 (3/100) (1/2) []) $ (Mirror $ ResizableTall 0 (3/100) (1/2) [])) |||
-  ResizableTall 1 (3/100) (1/2) [] |||
+  subLayout [] (ResizableTall 0 (3/100) (1/2) []) $ (Mirror $ ResizableTall 0 (3/100) (1/2) []) |||
+  -- subLayout [] (ResizableTall 0 (3/100) (1/2) []) $ emptyBSP |||
+  -- subLayout [] emptyBSP $ (Mirror (BinaryColumn 0.7 16)) |||
+  -- ResizableTall 1 (3/100) (1/2) [] |||
   rowOfColumns |||
+  mastered (1/100) (1/2) rowOfColumns |||
   emptyBSP |||
-  mastered (1/100) (1/2) emptyBSP |||
-  (stoppable rowOfColumns)
+  mastered (1/100) (1/2) emptyBSP
+  -- (stoppable rowOfColumns)
   -- |||  Tall 1 (3/100) (1/2) ||| mosaic 2 [3,2]
 
 myWorkspaces = ["1","2","3","4","5","6","7","8","9"]
@@ -72,7 +79,7 @@ main =  xmonad $ ewmh $ kdeConfig
   , borderWidth = 2
   , workspaces  = myWorkspaces
   , modMask     = mod4Mask
-  , layoutHook  = avoidStruts  $ (windowNavigation $ (hiddenWindows $  myLayouts))
+  , layoutHook  = avoidStruts $ (windowNavigation $ (hiddenWindows $ (maximize $ (spacing 6 $ myLayouts))))
   , logHook     = dynamicLog
   , keys        = myKeys
   , terminal    = "st"
@@ -120,7 +127,7 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     -- Toggle the status bar gap
     -- Use this binding with avoidStruts from Hooks.ManageDocks.
     -- See also the statusBar function from Hooks.DynamicLog.
-    -- , ((modm              , xK_b     ), sendMessage ToggleStruts)
+    , ((modm              , xK_b     ), sendMessage ToggleStruts)
     -- Quit xmonad
     --, ((modm .|. shiftMask, xK_q     ), io (exitWith ExitSuccess))
     ---- Restart xmonad
@@ -173,7 +180,7 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     --close focused window
     , ((modm .|. shiftMask, xK_c), kill)
       -- Rotate through the available layout algorithms
-    , ((modm, xK_space), sendMessage NextLayout)
+    -- , ((modm, xK_space), sendMessage NextLayout)
     --  Reset the layouts on the current workspace to default
     , ((modm .|. shiftMask, xK_space ), setLayout $ XMonad.layoutHook conf)
     -- Resize viewed windows to the correct size
@@ -181,7 +188,7 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     -- Move focus to the next window
     , ((modm, xK_Tab), windows W.focusDown)
     -- Move focus to the next window
-    , ((modm,               xK_space ), sendMessage NextLayout)
+    -- , ((modm,               xK_space ), sendMessage NextLayout)
     , ((modm, xK_q), kill1)
     , ((modm .|. shiftMask, xK_a), withFocused (sendMessage . expandWindowAlt))
     , ((modm .|. shiftMask, xK_z), withFocused (sendMessage . shrinkWindowAlt))
@@ -204,16 +211,45 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
         , ((mod1Mask .|. controlMask , xK_j), sendMessage $ ShrinkFrom D)
         , ((mod1Mask .|. controlMask , xK_k), sendMessage $ ShrinkFrom U)
         , ((0, xK_r), sendMessage $ Rotate)
-        -- , ((0,                       xK_s ), sendMessage $ Swap)
+        -- , ((0,                      xK_s ), sendMessage $ Swap)
         , ((0, xK_n), sendMessage $ FocusParent)
         , ((controlMask, xK_n), sendMessage $ SelectNode)
         , ((shiftMask, xK_n), sendMessage $ MoveNode)
         , ((mod4Mask, xK_a),sendMessage $ Balance)
         , ((mod4Mask .|. shiftMask, xK_a),sendMessage $ Equalize)
         ])
+    , ((mod4Mask, xK_s), submap . M.fromList $
+      [   ((0, xK_k), focusUp)
+        , ((0, xK_j), focusDown)
+        , ((0, xK_u), focusUp)
+        , ((0, xK_d), focusDown)
+        , ((0, xK_s), splitGroup)
+        --, ((0, xK_n), focusGroupUp)
+        --, ((0, xK_m), focusGroupDown)
+        , ((shiftMask, xK_n), swapGroupUp)
+        , ((shiftMask, xK_m), swapGroupDown)
+        , ((mod1Mask .|. shiftMask, xK_u), (moveToGroupUp True))
+        , ((mod1Mask .|. shiftMask, xK_d), (moveToGroupDown True))
+        , ((mod1Mask .|. controlMask .|. shiftMask, xK_n), moveToNewGroupUp)
+        , ((mod1Mask .|. controlMask .|. shiftMask, xK_m), moveToNewGroupDown)
+        , ((shiftMask, xK_k), swapGroupUp)
+        , ((shiftMask, xK_j), swapGroupDown)
+        , ((mod1Mask , xK_k), (moveToGroupUp True))
+        , ((mod1Mask , xK_j), (moveToGroupDown True))
+        , ((controlMask, xK_k), moveToNewGroupUp)
+        , ((controlMask, xK_j), moveToNewGroupDown)
+        --, ((0 xK_Return), focusGroupMaster)
+        --, ((shiftMask, xK_Return), swapGroupMaster)
+        , ((0, xK_f), toggleWindowFull)
+        , ((shiftMask, xK_f), toggleGroupFull)
+        , ((0, xK_plus), zoomGroupIn)
+        , ((0, xK_minus), zoomGroupOut)
+        , ((0, xK_n), groupToNextLayout)
+      ])
     , ((mod4Mask, xK_a), submap . M.fromList $
         [ ((shiftMask, xK_u), swapUp )
         , ((shiftMask, xK_d), swapDown)
+        , ((modm, xK_m), withFocused (sendMessage . maximizeRestore))
         , ((modm .|. shiftMask,                 xK_e), layoutScreens 2 (TwoPane 0.5 0.5))
         , ((modm .|. controlMask .|. shiftMask, xK_e), rescreen)
         , ((0, xK_u), focusUp)
@@ -223,8 +259,8 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
         --, ((0, xK_m), focusGroupDown)
         , ((shiftMask, xK_n), swapGroupUp)
         , ((shiftMask, xK_m), swapGroupDown)
-        , ((mod1Mask .|. shiftMask, xK_u), (moveToGroupUp False))
-        , ((mod1Mask .|. shiftMask, xK_d), (moveToGroupDown False))
+        , ((mod1Mask .|. shiftMask, xK_u), (moveToGroupUp True))
+        , ((mod1Mask .|. shiftMask, xK_d), (moveToGroupDown True))
         , ((mod1Mask .|. controlMask .|. shiftMask, xK_n), moveToNewGroupUp)
         , ((mod1Mask .|. controlMask .|. shiftMask, xK_m), moveToNewGroupDown)
         --, ((0 xK_Return), focusGroupMaster)
@@ -243,7 +279,6 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
         --close focused window
         , ((modm .|. shiftMask, xK_c), kill1)
          -- Rotate through the available layout algorithms
-        , ((modm, xK_space), sendMessage NextLayout)
         --  Reset the layouts on the current workspace to default
         , ((modm .|. shiftMask, xK_space), setLayout $ XMonad.layoutHook conf)
         -- Resize viewed windows to the correct size
@@ -380,13 +415,77 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
         ])
     , ((mod4Mask, xK_z), submap . M.fromList $
       [
-        ((modm, xK_a), sendMessage MirrorShrink)
-      , ((modm, xK_z), sendMessage MirrorExpand)
+        ((0, xK_f), runOrCopy "firefox" (className =? "Firefox"))
+      , ((0, xK_e), runOrCopy "emacs" (className =? "emacs"))
+      , ((0, xK_t), runOrCopy "main" (className =? "st"))
       ])
     , ((mod4Mask, xK_plus), sendMessage MirrorExpand)
     , ((mod4Mask, xK_minus), sendMessage MirrorShrink)
     , ((mod4Mask .|. shiftMask, xK_plus), toSubl MirrorExpand)
     , ((mod4Mask .|. shiftMask, xK_minus), toSubl MirrorShrink)
+    , ((mod4Mask .|. controlMask, xK_c), shellPrompt def)
+    , ((mod4Mask, xK_w), submap . M.fromList $
+      [ ((0, xK_x), removeWorkspace)
+      , ((0, xK_a), selectWorkspace def)
+      , ((0, xK_w), selectWorkspace def)
+      , ((0, xK_m), withWorkspace def (windows . W.shift))
+      , ((0, xK_m), withWorkspace def (windows . copy))
+      , ((0, xK_c), withWorkspace def (windows . W.shift))
+      , ((0, xK_c), withWorkspace def (windows . copy))
+      , ((0, xK_s), addWorkspacePrompt def)
+      , ((0, xK_r), renameWorkspace def)
+      , ((0,xK_j),  nextWS)
+      , ((0,xK_k),    prevWS)
+      , ((shiftMask, xK_j),  shiftToNext)
+      , ((shiftMask, xK_k),    shiftToPrev)
+      , ((0,xK_l), nextScreen)
+      , ((0,xK_h),  prevScreen)
+      , ((shiftMask, xK_l), shiftNextScreen)
+      , ((shiftMask, xK_h),  shiftPrevScreen)
+      , ((0,K_z),     toggleWS)
+      ])
+      , ((mod4Mask, xK_space), submap . M.fromList $
+       [((0, xK_b), submap . M.fromList $
+        [
+         ((mod1Mask, xK_l), sendMessage $ ExpandTowards R)
+       , ((mod1Mask, xK_h), sendMessage $ ExpandTowards L)
+       , ((mod1Mask, xK_j), sendMessage $ ExpandTowards D)
+       , ((mod1Mask, xK_k), sendMessage $ ExpandTowards U)
+       , ((controlMask, xK_l), sendMessage $ ShrinkFrom R)
+       , ((controlMask, xK_h), sendMessage $ ShrinkFrom L)
+       , ((controlMask, xK_j), sendMessage $ ShrinkFrom D)
+       , ((controlMask, xK_k), sendMessage $ ShrinkFrom U)
+       , ((0, xK_r), sendMessage Rotate)
+       -- , ((modm,                           xK_s     ), sendMessage Swap)
+       , ((0, xK_n), sendMessage FocusParent)
+       , ((controlMask,xK_n     ), sendMessage SelectNode)
+       , ((shiftMask, xK_n), sendMessage MoveNode)
+       , ((0, xK_a),     sendMessage Balance)
+       , ((shiftMask, dMessage Equalize)
+
+        ])
+        , ((0, xK_space), sendMessage NextLayout)
+        , ((0, xK_w), submap . M.fromList $
+            [ ((0, xK_x), removeWorkspace)
+            , ((0, xK_a      ), selectWorkspace def)
+            , ((0, xK_w      ), selectWorkspace def)
+            , ((0, xK_m                    ), withWorkspace def (windows . W.shift))
+            , ((0, xK_m      ), withWorkspace def (windows . copy))
+            , ((0, xK_c                    ), withWorkspace def (windows . W.shift))
+            , ((0, xK_c      ), withWorkspace def (windows . copy))
+            , ((0, xK_s      ), addWorkspacePrompt def)
+            , ((0, xK_r      ), renameWorkspace def)
+            , ((0,               xK_j),  nextWS)
+            , ((0,               xK_k),    prevWS)
+            , ((shiftMask, xK_j),  shiftToNext)
+            , ((shiftMask, xK_k),    shiftToPrev)
+            , ((0,               xK_l), nextScreen)
+            , ((0,               xK_h),  prevScreen)
+            , ((shiftMask, xK_l), shiftNextScreen)
+            , ((shiftMask, xK_h),  shiftPrevScreen)
+            , ((0,               xK_z),     toggleWS)
+      ])
+       ])
   ]
  ++
     --
@@ -399,8 +498,13 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
       , (f, m) <- [(W.greedyView, 0), (W.shift, shiftMask), (copy, controlMask)]
   ]
 
- ++
- [((m .|. modm, key), screenWorkspace sc >>= flip whenJust (windows . f))
-     | (key, sc) <- zip [xK_w, xK_e, xK_r] [0..]
-     , (f, m) <- [(W.view, 0), (W.shift, shiftMask)]]
+ -- ++
+ -- [((m .|. modm, key), screenWorkspace sc >>= flip whenJust (windows . f))
+ --     | (key, sc) <- zip [xK_w, xK_e, xK_r] [0..]
+ -- mod-[1..9]         %! Switch to workspace of index N
+-- mod-control-[1..9] %! Set index N to the current workspace
+   ++
+   zip (zip (repeat (modm)) [xK_1..xK_9]) (map (withWorkspaceIndex W.greedyView) [1..])
+   ++
+   zip (zip (repeat (modm .|. controlMask)) [xK_1..xK_9]) (map (setWorkspaceIndex) [1..])--     , (f, m) <- [(W.view, 0), (W.shift, shiftMask)]]
 
